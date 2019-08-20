@@ -345,7 +345,7 @@ class BioSystem {
             if((bs.getTimeElapsed()%interval <= 0.02*interval) && !alreadyRecorded){
 
                 int max_poss_pop = bs.getSystemSize()*K;
-                System.out.println("runID: "+runID+"\tt: "+bs.getTimeElapsed()+"\tpop size: "+bs.getTotalN()+"/"+max_poss_pop+"\tbf_edge: "+bs.getBiofilmEdge());
+                System.out.println("runID: "+runID+"\tt: "+bs.getTimeElapsed()+"\tpop size: "+bs.getTotalN()+"/"+max_poss_pop+"\tbf_edge: "+bs.getBiofilmEdge()+"\tK*: "+bs.biofilm_threshold+"\tdet_r: "+bs.deterioration_rate);
                 alreadyRecorded = true;
 
                 times.add(bs.getTimeElapsed());
