@@ -332,7 +332,7 @@ class BioSystem {
     private static DataBox getEventCountersAndRunPops_Subroutine(double duration, int nMeasurements, int runID, double scale, double sigma){
 
         int K = 120;
-        double c_max = 0.0, alpha = 0.01;
+        double c_max = 10.0, alpha = 0.01;
         double interval = duration/nMeasurements;
         boolean alreadyRecorded = false;
 
