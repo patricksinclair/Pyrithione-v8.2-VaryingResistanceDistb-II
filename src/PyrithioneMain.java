@@ -13,6 +13,6 @@ public class PyrithioneMain {
         int nReps = 200;
         System.out.println("geno distbs now with thickness limit and directory creation");
 
-        BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID99);
+        BioSystem.getEventCountersAndRunPopulations(nReps, scale_95, sigma_95, folderID95);
     }
 }

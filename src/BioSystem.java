@@ -219,7 +219,7 @@ class BioSystem {
 
                     ////////////////// REPLICATIONS AND DEATHS ///////////////////////////
                     double[] g_and_d_rate = microhabitats.get(mh_index).replicationAndDeathRates(bac_index);
-                    double g_rate = g_and_d_rate[0], d_rate = g_and_d_rate[1];
+                    double g_rate = Math.abs(g_and_d_rate[0]), d_rate = Math.abs(g_and_d_rate[1]);
 
                     if(g_rate == 0.) {
                         n_replications[bac_index] = 0;
@@ -231,7 +231,7 @@ class BioSystem {
                     if(d_rate == 0.) {
                         n_deaths[bac_index] = 0;
                     } else {
-                        n_deaths[bac_index] = new PoissonDistribution(Math.abs(d_rate)*tau_step).sample();
+                        n_deaths[bac_index] = new PoissonDistribution(d_rate*tau_step).sample();
 
                         if(n_deaths[bac_index] > 1) {
                             tau_step /= 2.;
