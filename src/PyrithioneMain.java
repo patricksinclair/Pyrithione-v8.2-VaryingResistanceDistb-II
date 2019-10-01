@@ -14,7 +14,9 @@ public class PyrithioneMain {
         String folderID99 = "-99_suscep"+date;
         String folderID98 = "-98_suscep"+date;
         String folderID97 = "-97_suscep"+date;
+        String folderID96 = "-96_suscep"+date;
         String folderID95 = "-95_suscep"+date;
+        String folderID94 = "-94_suscep"+date;
         String folderID93 = "-93_suscep"+date;
         String folderID90 = "-90_suscep"+date;
         String folderID_testing = "-testo";
