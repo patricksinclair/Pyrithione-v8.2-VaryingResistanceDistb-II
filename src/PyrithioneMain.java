@@ -10,7 +10,7 @@ public class PyrithioneMain {
         double scale_93 = 1.01073016, sigma_93 = 1.51389233;
         double scale_90 = 1.01115312, sigma_90 = 1.51378016;
 
-        String date = "-1-October-2019";
+        String date = "-21-November-2019";
         String folderID99 = "-99_suscep"+date;
         String folderID98 = "-98_suscep"+date;
         String folderID97 = "-97_suscep"+date;
@@ -22,7 +22,7 @@ public class PyrithioneMain {
         String folderID_testing = "-testo";
 
         int nReps = 200;
-        System.out.println("geno distbs now with thickness limit and directory creation");
+        System.out.println("bug fixed version");
 
         BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID99);
     }

@@ -7,17 +7,23 @@ import java.util.stream.IntStream;
 class BioSystem {
 
     private Random rand = new Random();
+    //need to initialise these in the performAction method in order to incorporate the tau halving
+    private PoissonDistribution poiss_imigration;
+    private PoissonDistribution poiss_deterioration;
+    private PoissonDistribution poiss_migration;
+    private PoissonDistribution poiss_migration_edge;
 
     private double alpha, c_max; //steepness and max val of antimicrobial concn
-    private double scale = 2.71760274, sigma = 0.56002833; //mic distb shape parameters
+    private double scale, sigma; //mic distb shape parameters
     private ArrayList<Microhabitat> microhabitats;
     private double time_elapsed, exit_time; //exit time is the time it took for the biofilm to reach the thickness limit, if it did
     private int immigration_index;
 
-    private double deterioration_rate = 0.002;
-    private double biofilm_threshold = 0.6;
+    private double deterioration_rate = 0.035;
+    private double biofilm_threshold = 0.7;
     private double immigration_rate = 0.8;
-    private double tau = 0.01;
+    private double migration_rate = 0.2;
+    private double tau = 0.2; //much larger value now that the bug is fixed
     private double delta_x = 5.;
     private int thickness_limit = 50; //this is how big the system can get before we exit. should reduce overall simulation duration
     private int n_detachments = 0, n_deaths = 0, n_replications = 0, n_immigrations = 0;
@@ -35,6 +41,7 @@ class BioSystem {
         this.immigration_index = 0;
 
         microhabitats.add(new Microhabitat(calc_C_i(0, this.c_max, this.alpha, this.delta_x), scale, sigma, this.biofilm_threshold));
+
         microhabitats.get(0).setSurface();
         microhabitats.get(0).addARandomBacterium_x_N(5);
     }
@@ -176,6 +183,11 @@ class BioSystem {
 
         whileloop:
         while(true) {
+            poiss_imigration = new PoissonDistribution(immigration_rate*tau_step);
+            poiss_deterioration = new PoissonDistribution(deterioration_rate*tau_step);
+            poiss_migration = new PoissonDistribution(migration_rate*tau_step);
+            poiss_migration_edge = new PoissonDistribution(0.5*migration_rate*tau_step);
+
             replication_allocations = new int[system_size][];
             death_allocations = new int[system_size][];
             migration_allocations = new int[system_size][];
@@ -184,75 +196,78 @@ class BioSystem {
 
             for(int mh_index = 0; mh_index < system_size; mh_index++) {
 
-                //we iterate through all the bacteria and
+                //we iterate through all the bacteria and calculate the events which they'll experience
                 int mh_pop = microhabitats.get(mh_index).getN();
                 int[] n_replications = new int[mh_pop];
                 int[] n_deaths = new int[mh_pop];
                 int[] n_migrations = new int[mh_pop];
 
                 for(int bac_index = 0; bac_index < mh_pop; bac_index++) {
+                    ///////// REPLICATIONS AND DEATHS ///////////////////
+                    double[] g_and_d_rate = microhabitats.get(mh_index).replicationAndDeathRates(bac_index);
+                    double g_rate = g_and_d_rate[0], d_rate = Math.abs(g_and_d_rate[1]);
 
-                    ////////// MIGRATIONS //////////////////////
-                    n_migrations[bac_index] = new PoissonDistribution(microhabitats.get(mh_index).migrate_rate()*tau_step).sample();
+                    if(g_rate > 0.) {
+                        PoissonDistribution poiss_replication = new PoissonDistribution(g_rate*tau_step);
+                        poiss_replication.reseedRandomGenerator(rand.nextLong());
+                        n_replications[bac_index] = poiss_replication.sample();
+                    }
 
-                    if(n_migrations[bac_index] > 1) {
-                        tau_step /= 2.;
+                    //d_rate is always > 0 due to inclusion of uniform death rate, so no need for the if statements
+                    //seen in earlier versions
+                    PoissonDistribution poiss_death = new PoissonDistribution(d_rate*tau_step);
+                    poiss_death.reseedRandomGenerator(rand.nextLong());
+                    n_deaths[bac_index] = poiss_death.sample();
+
+                    //bacteria can't die twice, so need to handle this
+                    if(n_deaths[bac_index] > 1) {
+                        //tau_halves_counter++;
+                        tau_step /= 2;
                         continue whileloop;
                     }
-                    ////////////////////////////////////////////
 
 
-                    ///////////// DETACHMENTS /////////////////////////
-                    if(mh_index == immigration_index) {
-                        detachment_allocations[bac_index] = new PoissonDistribution(deterioration_rate*tau_step).sample();
+                    ///////// MIGRATIONS AND DETACHMENTS //////////////////////
+                    //only non-dead bacteria can migrate or detach
+                    if(n_deaths[bac_index] == 0) {
+                        //need to handle edge migrations
+                        if(mh_index == 0) {
+                            n_migrations[bac_index] = poiss_migration_edge.sample();
 
-                        if(detachment_allocations[bac_index] > 1) {
+                        } else if(mh_index == immigration_index) {
+
+                            detachment_allocations[bac_index] = poiss_deterioration.sample();
+                            //check for double events
+                            if( detachment_allocations[bac_index] > 1) {
+                                //tau_halves_counter++;
+                                tau_step /= 2.;
+                                continue whileloop;
+                            }
+
+                            //bacteria can only migrate if it's not detaching
+                            if(detachment_allocations[bac_index] == 0) {
+                                n_migrations[bac_index] = poiss_migration_edge.sample();
+                            }
+
+                        } else {
+                            n_migrations[bac_index] = poiss_migration.sample();
+                        }
+
+                        //check for double events
+                        if(n_migrations[bac_index] > 1){
+                            //tau_halves_counter++;
                             tau_step /= 2.;
                             continue whileloop;
                         }
-                        //if a bacteria is detaching then it can't migrate
-                        if(detachment_allocations[bac_index] != 0) {
-                            n_migrations[bac_index] = 0;
-                        }
                     }
-                    ////////////////////////////////////////////////////////
-
-                    ////////////////// REPLICATIONS AND DEATHS ///////////////////////////
-                    double[] g_and_d_rate = microhabitats.get(mh_index).replicationAndDeathRates(bac_index);
-                    double g_rate = Math.abs(g_and_d_rate[0]), d_rate = Math.abs(g_and_d_rate[1]);
-
-                    if(g_rate == 0.) {
-                        n_replications[bac_index] = 0;
-                    } else {
-                        n_replications[bac_index] = new PoissonDistribution(g_rate*tau_step).sample();
-                    }
-
-
-                    if(d_rate == 0.) {
-                        n_deaths[bac_index] = 0;
-                    } else {
-                        n_deaths[bac_index] = new PoissonDistribution(d_rate*tau_step).sample();
-
-                        if(n_deaths[bac_index] > 1) {
-                            tau_step /= 2.;
-                            continue whileloop;
-                        }
-                        //if a death is occurring, then that bacteria can't migrate or detach
-                        if(n_deaths[bac_index] != 0) {
-                            n_migrations[bac_index] = 0;
-                            if(mh_index == immigration_index) detachment_allocations[bac_index] = 0;
-                        }
-                    }
-                    /////////////////////////////////////////////////////////////////////////
-
                 }
                 replication_allocations[mh_index] = n_replications;
                 death_allocations[mh_index] = n_deaths;
                 migration_allocations[mh_index] = n_migrations;
                 original_popsizes[mh_index] = microhabitats.get(mh_index).getN();
             }
-            n_immigrants = new PoissonDistribution(immigration_rate*tau_step).sample();
-            break;
+            n_immigrants = poiss_imigration.sample();
+            break whileloop;
         }
 
         ///// here we carry out the actions
