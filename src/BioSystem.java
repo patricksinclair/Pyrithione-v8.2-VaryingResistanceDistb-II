@@ -23,7 +23,7 @@ class BioSystem {
     private double biofilm_threshold = 0.7;
     private double immigration_rate = 0.8;
     private double migration_rate = 0.2;
-    private double tau = 0.2; //much larger value now that the bug is fixed
+    private double tau = 0.1; //much larger value now that the bug is fixed
     private double delta_x = 5.;
     private int thickness_limit = 50; //this is how big the system can get before we exit. should reduce overall simulation duration
     private int n_detachments = 0, n_deaths = 0, n_replications = 0, n_immigrations = 0;
@@ -234,7 +234,7 @@ class BioSystem {
                         if(mh_index == 0) {
                             n_migrations[bac_index] = poiss_migration_edge.sample();
 
-                        } else if(mh_index == immigration_index) {
+                        }else if(mh_index == immigration_index) {
 
                             detachment_allocations[bac_index] = poiss_deterioration.sample();
                             //check for double events
