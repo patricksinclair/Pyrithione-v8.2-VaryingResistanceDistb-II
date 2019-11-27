@@ -10,7 +10,7 @@ public class PyrithioneMain {
         double scale_93 = 1.01073016, sigma_93 = 1.51389233;
         double scale_90 = 1.01115312, sigma_90 = 1.51378016;
 
-        String date = "-22-November-2019";
+        String date = "-27-November-2019";
         String folderID99 = "-99_suscep"+date;
         String folderID98 = "-98_suscep"+date;
         String folderID97 = "-97_suscep"+date;
@@ -21,9 +21,9 @@ public class PyrithioneMain {
         String folderID90 = "-90_suscep"+date;
         String folderID_testing = "-testo2";
 
-        int nReps = 20;
-        System.out.println("the other bug fixed version");
+        int nReps = 200;
+        System.out.println("hopefully bug free");
 
-        BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID_testing);
+        BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID99);
     }
 }

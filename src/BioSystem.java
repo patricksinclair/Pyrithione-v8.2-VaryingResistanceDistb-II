@@ -266,6 +266,8 @@ class BioSystem {
                     //////////////////////////////////////////////////////
 
                 }
+                //once every bacteria in the microhabitat has been allocated an event, we save the event arrays
+                //into the array of arrays representing the system
                 replication_allocations[mh_index] = n_replications;
                 death_allocations[mh_index] = n_deaths;
                 migration_allocations[mh_index] = n_migrations;
@@ -314,8 +316,8 @@ class BioSystem {
         int n_sections = nReps/n_runs_per_section;
         int nMeasurements = 100;
 
-        //double duration = 25.*7.*24.; //25 week duration
-        double duration = 200.;
+        double duration = 25.*7.*24.; //25 week duration
+        //double duration = 200.;
         //double duration = 2048.;
 
         String results_directory_name = "all_run_populations"+folderID;
