@@ -26,7 +26,7 @@ class BioSystem {
     private double tau = 0.2; //much larger value now that the bug is fixed
     private double delta_x = 5.;
     private int thickness_limit = 50; //this is how big the system can get before we exit. should reduce overall simulation duration
-    private int n_detachments = 0, n_deaths = 0, n_replications = 0, n_immigrations = 0;
+    private int n_detachments = 0, n_deaths = 0, n_replications = 0, n_immigrations = 0, n_migrations = 0;
 
 
     private BioSystem(double alpha, double c_max, double scale, double sigma){
@@ -69,6 +69,8 @@ class BioSystem {
     private int getN_immigrations(){
         return n_immigrations;
     }
+
+    private int getN_migrations(){ return n_migrations; }
 
     private double getTimeElapsed(){
         return time_elapsed;
@@ -290,6 +292,7 @@ class BioSystem {
 
                     if(system_size > 1) {
                         if(migration_allocations[mh_index][bac_index] != 0) migrate(mh_index, bac_index);
+                        n_migrations += migration_allocations[mh_index][bac_index];
                     }
 
                     if(mh_index == immigration_index) {
@@ -321,7 +324,7 @@ class BioSystem {
         //double duration = 2048.;
 
         String results_directory_name = "all_run_populations"+folderID;
-        String[] headers = new String[]{"run_ID", "bf thickness", "n_deaths", "n_detachments", "n_immigrations", "n_replications", "exit time"};
+        String[] headers = new String[]{"run_ID", "bf thickness", "n_deaths", "n_detachments", "n_immigrations", "n_replications", "n_migrations", "exit time"};
         DataBox[] dataBoxes = new DataBox[nReps];
         String event_counters_filename = "pyrithione-t="+String.valueOf(duration)+"-parallel-event_counters_sigma="+String.format("%.5f", sigma);
         String mh_pops_over_time_filename = "pyrithione-t="+String.valueOf(duration)+"-sigma="+String.format("%.5f", sigma)+"-mh_pops-runID=";
@@ -380,7 +383,7 @@ class BioSystem {
         }
         if((int)bs.exit_time == 0) bs.exit_time = duration;
 
-        int[] event_counters = new int[]{runID, bs.getBiofilmThickness(), bs.getN_deaths(), bs.getN_detachments(), bs.getN_immigrations(), bs.getN_replications(), (int)bs.getExit_time()};
+        int[] event_counters = new int[]{runID, bs.getBiofilmThickness(), bs.getN_deaths(), bs.getN_detachments(), bs.getN_immigrations(), bs.getN_replications(), bs.getN_migrations(), (int)bs.getExit_time()};
 
         return new DataBox(runID, event_counters, times, mh_pops_over_time);
     }
