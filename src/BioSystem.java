@@ -23,7 +23,7 @@ class BioSystem {
     private double biofilm_threshold = 0.7;
     private double immigration_rate = 0.8;
     private double migration_rate = 0.2;
-    private double tau = 0.1; //much larger value now that the bug is fixed
+    private double tau = 0.2; //much larger value now that the bug is fixed
     private double delta_x = 5.;
     private int thickness_limit = 50; //this is how big the system can get before we exit. should reduce overall simulation duration
     private int n_detachments = 0, n_deaths = 0, n_replications = 0, n_immigrations = 0;
@@ -160,7 +160,7 @@ class BioSystem {
             microhabitats.get(immigration_index).setImmigration_zone(true);
         }
 
-        //this stops sims going onn unnecessarily too long. if the biofilm reaches the thickness limit then we record the
+        //this stops sims going on unnecessarily too long. if the biofilm reaches the thickness limit then we record the
         //time this happened at and move on
         if(getSystemSize() == thickness_limit) {
             exit_time = time_elapsed;
@@ -230,12 +230,24 @@ class BioSystem {
                     ///////// MIGRATIONS AND DETACHMENTS //////////////////////
                     //only non-dead bacteria can migrate or detach
                     if(n_deaths[bac_index] == 0) {
-                        //need to handle edge migrations
-                        if(mh_index == 0) {
+
+                        //firstly work out the migrations
+                        //do edge cases and bulk, then do detachments and set detaching migrations to 0
+                        if(mh_index == 0 || mh_index == immigration_index){
                             n_migrations[bac_index] = poiss_migration_edge.sample();
+                        }else{
+                            n_migrations[bac_index] = poiss_migration.sample();
+                        }
+                        //check for double events
+                        if(n_migrations[bac_index] > 1){
+                            //tau_halves_counter++;
+                            tau_step /= 2.;
+                            continue whileloop;
+                        }
 
-                        }else if(mh_index == immigration_index) {
-
+                        //migrations sorted, now do detachments
+                        //detaching bacteria can't migrate
+                        if(mh_index == immigration_index){
                             detachment_allocations[bac_index] = poiss_deterioration.sample();
                             //check for double events
                             if( detachment_allocations[bac_index] > 1) {
@@ -243,23 +255,16 @@ class BioSystem {
                                 tau_step /= 2.;
                                 continue whileloop;
                             }
-
                             //bacteria can only migrate if it's not detaching
-                            if(detachment_allocations[bac_index] == 0) {
-                                n_migrations[bac_index] = poiss_migration_edge.sample();
+                            if(detachment_allocations[bac_index] > 0) {
+                                n_migrations[bac_index] = 0;
                             }
 
-                        } else {
-                            n_migrations[bac_index] = poiss_migration.sample();
                         }
 
-                        //check for double events
-                        if(n_migrations[bac_index] > 1){
-                            //tau_halves_counter++;
-                            tau_step /= 2.;
-                            continue whileloop;
-                        }
                     }
+                    //////////////////////////////////////////////////////
+
                 }
                 replication_allocations[mh_index] = n_replications;
                 death_allocations[mh_index] = n_deaths;
@@ -309,8 +314,8 @@ class BioSystem {
         int n_sections = nReps/n_runs_per_section;
         int nMeasurements = 100;
 
-        double duration = 25.*7.*24.; //25 week duration
-        //double duration = 8.;
+        //double duration = 25.*7.*24.; //25 week duration
+        double duration = 200.;
         //double duration = 2048.;
 
         String results_directory_name = "all_run_populations"+folderID;
