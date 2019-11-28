@@ -19,11 +19,11 @@ public class PyrithioneMain {
         String folderID94 = "-94_suscep"+date;
         String folderID93 = "-93_suscep"+date;
         String folderID90 = "-90_suscep"+date;
-        String folderID_testing = "-testo2";
+        String folderID_testing = "-99-test-steadystate";
 
         int nReps = 200;
         System.out.println("hopefully bug free");
 
-        BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID99);
+        BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID_testing);
     }
 }

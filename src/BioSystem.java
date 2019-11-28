@@ -21,7 +21,7 @@ class BioSystem {
 
     private double deterioration_rate = 0.035;
     private double biofilm_threshold = 0.7;
-    private double immigration_rate = 0.8;
+    private double immigration_rate = 0.8*0.01;//todo
     private double migration_rate = 0.2;
     private double tau = 0.2; //much larger value now that the bug is fixed
     private double delta_x = 5.;
@@ -235,16 +235,19 @@ class BioSystem {
 
                         //firstly work out the migrations
                         //do edge cases and bulk, then do detachments and set detaching migrations to 0
-                        if(mh_index == 0 || mh_index == immigration_index){
-                            n_migrations[bac_index] = poiss_migration_edge.sample();
-                        }else{
-                            n_migrations[bac_index] = poiss_migration.sample();
-                        }
-                        //check for double events
-                        if(n_migrations[bac_index] > 1){
-                            //tau_halves_counter++;
-                            tau_step /= 2.;
-                            continue whileloop;
+                        //only do migrations if there's multiple microhabs
+                        if(immigration_index > 0) {
+                            if(mh_index == 0 || mh_index == immigration_index) {
+                                n_migrations[bac_index] = poiss_migration_edge.sample();
+                            } else {
+                                n_migrations[bac_index] = poiss_migration.sample();
+                            }
+                            //check for double events
+                            if(n_migrations[bac_index] > 1) {
+                                //tau_halves_counter++;
+                                tau_step /= 2.;
+                                continue whileloop;
+                            }
                         }
 
                         //migrations sorted, now do detachments
@@ -319,8 +322,8 @@ class BioSystem {
         int n_sections = nReps/n_runs_per_section;
         int nMeasurements = 100;
 
-        double duration = 25.*7.*24.; //25 week duration
-        //double duration = 200.;
+        //double duration = 25.*7.*24.; //25 week duration
+        double duration = 1000.;
         //double duration = 2048.;
 
         String results_directory_name = "all_run_populations"+folderID;

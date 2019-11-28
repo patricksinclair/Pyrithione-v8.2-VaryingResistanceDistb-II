@@ -72,7 +72,8 @@ class Microhabitat {
 
     void addARandomBacterium_x_N(int n_bacteria){
         for(int i = 0; i < n_bacteria; i++){
-            population.add(MIC_distribution.sample());
+            //population.add(MIC_distribution.sample());
+            population.add(100.);//todo
         }
     }
 
