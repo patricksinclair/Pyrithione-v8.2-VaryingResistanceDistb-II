@@ -322,8 +322,8 @@ class BioSystem {
         int n_sections = nReps/n_runs_per_section;
         int nMeasurements = 100;
 
-        //double duration = 25.*7.*24.; //25 week duration
-        double duration = 1000.;
+        double duration = 25.*7.*24.; //25 week duration
+        //double duration = 1000.;
         //double duration = 2048.;
 
         String results_directory_name = "all_run_populations"+folderID;
