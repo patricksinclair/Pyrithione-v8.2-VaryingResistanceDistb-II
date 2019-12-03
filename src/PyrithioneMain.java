@@ -24,6 +24,6 @@ public class PyrithioneMain {
         int nReps = 200;
         System.out.println("hopefully bug free");
 
-        BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID_testing);
+        BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID99);
     }
 }
