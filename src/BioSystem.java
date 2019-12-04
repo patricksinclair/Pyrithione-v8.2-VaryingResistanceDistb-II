@@ -19,7 +19,7 @@ class BioSystem {
     private double time_elapsed, exit_time; //exit time is the time it took for the biofilm to reach the thickness limit, if it did
     private int immigration_index;
 
-    private double deterioration_rate = 0.021;
+    private double deterioration_rate = 0.022;
     private double biofilm_threshold = 0.7;
     private double immigration_rate = 0.8;
     private double migration_rate = 0.2;
