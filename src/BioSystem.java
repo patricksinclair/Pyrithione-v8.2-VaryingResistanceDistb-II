@@ -16,7 +16,11 @@ class BioSystem {
     private double alpha, c_max; //steepness and max val of antimicrobial concn
     private double scale, sigma; //mic distb shape parameters
     private ArrayList<Microhabitat> microhabitats;
-    private double time_elapsed, exit_time; //exit time is the time it took for the biofilm to reach the thickness limit, if it did
+
+    //exit time is the time it took for the biofilm to reach the thickness limit, if it did
+    //failure time is the time it took for the system to "fail", in this case form a single biofilm section
+    private double time_elapsed, exit_time, failure_time;
+
     private int immigration_index;
 
     private double deterioration_rate = 0.022;
@@ -25,7 +29,10 @@ class BioSystem {
     private double migration_rate = 0.2;
     private double tau = 0.2; //much larger value now that the bug is fixed
     private double delta_x = 5.;
-    private int thickness_limit = 50; //this is how big the system can get before we exit. should reduce overall simulation duration
+    //this is how big the system can get before we exit. should reduce overall simulation duration
+    private int thickness_limit = 50;
+    //this is how thick the biofilm can get before the system is deemed to have "failed"
+    private int failure_limit = 1;
     private int n_detachments = 0, n_deaths = 0, n_replications = 0, n_immigrations = 0, n_migrations = 0;
 
 
@@ -38,6 +45,7 @@ class BioSystem {
         this.microhabitats = new ArrayList<>();
         this.time_elapsed = 0.;
         this.exit_time = 0.;
+        this.failure_time = 0.;
         this.immigration_index = 0;
 
         microhabitats.add(new Microhabitat(calc_C_i(0, this.c_max, this.alpha, this.delta_x), scale, sigma, this.biofilm_threshold));
@@ -79,6 +87,8 @@ class BioSystem {
     private double getExit_time(){
         return exit_time;
     }
+
+    private double getFailure_time(){return failure_time;}
 
     private int getSystemSize(){
         return microhabitats.size();
@@ -164,8 +174,11 @@ class BioSystem {
 
         //this stops sims going on unnecessarily too long. if the biofilm reaches the thickness limit then we record the
         //time this happened at and move on
-        if(getSystemSize() == thickness_limit) {
+        //todo - remove the failure limit stuff for species composition simulations
+        //if immigration index is the same as the failure limit, then we also move on
+        if(getSystemSize() == thickness_limit || immigration_index == failure_limit) {
             exit_time = time_elapsed;
+            failure_time = time_elapsed;
             time_elapsed = 9e9; //this way the time elapsed is now way above the duration value, so the simulation will stop
         }
     }
@@ -323,6 +336,7 @@ class BioSystem {
         int nMeasurements = 100;
 
         double duration = 25.*7.*24.; //25 week duration
+        //double duration = 52.*7.*24.; //1 year duration
         //double duration = 1000.;
         //double duration = 2048.;
 
@@ -387,6 +401,80 @@ class BioSystem {
         if((int)bs.exit_time == 0) bs.exit_time = duration;
 
         int[] event_counters = new int[]{runID, bs.getBiofilmThickness(), bs.getTotalN(), bs.getN_deaths(), bs.getN_detachments(), bs.getN_immigrations(), bs.getN_replications(), bs.getN_migrations(), (int)bs.getExit_time()};
+
+        return new DataBox(runID, event_counters, times, mh_pops_over_time);
+    }
+
+
+
+    static void timeToFailure(int nReps, double scale, double sigma, String folderID){
+
+        long startTime = System.currentTimeMillis();
+
+        int n_runs_per_section = 20;
+        int n_sections = nReps/n_runs_per_section;
+        int nMeasurements = 100;
+
+        double duration = 52.*7.*24.; //1 year duration
+        //double duration = 1000.;
+        //double duration = 2048.;
+
+        String results_directory_name = "time_to_failure"+folderID;
+        String[] headers = new String[]{"run_ID", "bf thickness", "final_pop", "n_deaths", "n_detachments", "n_immigrations", "n_replications",
+                "n_migrations", "exit time", "failure time"};
+        DataBox[] dataBoxes = new DataBox[nReps];
+        String event_counters_filename = "pyrithione-t="+String.valueOf(duration)+"-parallel-event_counters_sigma="+String.format("%.5f", sigma);
+        //String mh_pops_over_time_filename = "pyrithione-t="+String.valueOf(duration)+"-sigma="+String.format("%.5f", sigma)+"-mh_pops-runID=";
+
+        for(int j = 0; j < n_sections; j++){
+            System.out.println("section: "+j);
+
+            IntStream.range(j*n_runs_per_section, (j+1)*n_runs_per_section).parallel().forEach(i ->
+                    dataBoxes[i] = timeToFailure_subroutine(duration, nMeasurements, i, scale, sigma));
+        }
+
+
+        Toolbox.writeDataboxEventCountersToFile(results_directory_name, event_counters_filename, headers, dataBoxes);
+
+
+        long finishTime = System.currentTimeMillis();
+        String diff = Toolbox.millisToShortDHMS(finishTime - startTime);
+        System.out.println("results written to file");
+        System.out.println("Time taken: "+diff);
+    }
+
+
+    private static DataBox timeToFailure_subroutine(double duration, int nMeasurements, int runID, double scale, double sigma){
+
+        int K = 120;
+        double c_max = 10.0, alpha = 0.01;
+        double interval = duration/nMeasurements;
+        boolean alreadyRecorded = false;
+
+        BioSystem bs = new BioSystem(alpha, c_max, scale, sigma);
+        ArrayList<ArrayList<ArrayList<Double>>> mh_pops_over_time = new ArrayList<>();
+        ArrayList<Double> times = new ArrayList<>();
+
+        while(bs.time_elapsed <= duration+0.02*interval){
+
+            if((bs.getTimeElapsed()%interval <= 0.02*interval) && !alreadyRecorded){
+
+                int max_poss_pop = bs.getSystemSize()*K;
+                System.out.println("runID: "+runID+"\tt: "+bs.getTimeElapsed()+"\tpop size: "+bs.getTotalN()+"/"+max_poss_pop+"\tbf_edge: "+bs.getBiofilmEdge()+"\tK*: "+bs.biofilm_threshold+"\tdet_r: "+bs.deterioration_rate);
+                alreadyRecorded = true;
+
+                //times.add(bs.getTimeElapsed());
+                //mh_pops_over_time.add(bs.getMicrohabPopulations()); //don't need these for the time to failure stuff
+
+            }
+            if(bs.getTimeElapsed()%interval >= 0.1*interval) alreadyRecorded = false;
+
+            bs.performAction();
+        }
+        if((int)bs.exit_time == 0) bs.exit_time = duration;
+
+        int[] event_counters = new int[]{runID, bs.getBiofilmThickness(), bs.getTotalN(), bs.getN_deaths(), bs.getN_detachments(),
+                bs.getN_immigrations(), bs.getN_replications(), bs.getN_migrations(), (int)bs.getExit_time(), (int)bs.getFailure_time()};
 
         return new DataBox(runID, event_counters, times, mh_pops_over_time);
     }

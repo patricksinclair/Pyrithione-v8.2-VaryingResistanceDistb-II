@@ -10,7 +10,7 @@ public class PyrithioneMain {
         double scale_93 = 1.01073016, sigma_93 = 1.51389233;
         double scale_90 = 1.01115312, sigma_90 = 1.51378016;
 
-        String date = "-4-December-2019";
+        String date = "-18-December-2019";
         String folderID99 = "-99_suscep"+date;
         String folderID98 = "-98_suscep"+date;
         String folderID97 = "-97_suscep"+date;
@@ -21,9 +21,9 @@ public class PyrithioneMain {
         String folderID90 = "-90_suscep"+date;
         String folderID_testing = "-99-test-steadystate";
 
-        int nReps = 200;
-        System.out.println("hopefully bug free");
-
-        BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID99);
+        int nReps = 1000;
+        System.out.println("failure time routine");
+        BioSystem.timeToFailure(nReps, scale_93, sigma_93, folderID93);
+        //BioSystem.getEventCountersAndRunPopulations(nReps, scale_99, sigma_99, folderID99);
     }
 }
